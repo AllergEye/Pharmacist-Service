@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "github.com/reezanvisram/allergeye/pharmacist/pb";
+
+service Auth {
+    rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse) {}
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {}
+    rpc AuthenticateUser(AuthenticateUserRequest) returns (AuthenticateUserResponse) {}
+}
+
+message GetUserByIdRequest {
+    string userId = 1;
+}
+
+message GetUserByIdResponse {
+    string username = 1;
+}
+
+message CreateUserRequest {
+    string email = 1;
+    string firstName = 2;
+    string lastName = 3;
+    string password = 4;
+}
+
+message CreateUserResponse {
+    string accessToken = 1;
+}
+
+message AuthenticateUserRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message AuthenticateUserResponse {
+    string accessToken = 1;
+}
