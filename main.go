@@ -35,7 +35,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := gorm.Open(mysql.Open(fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))), &gorm.Config{})
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
+	if os.Getenv("ENVIRONMENT") == "prod" {
+		dsn = fmt.Sprintf("%v:%v@cloudsql(%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_UNIX_SOCKET"), os.Getenv("DB_DATABASE"))
+	}
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		logger.Log("could not connect to database at", "tcp(127.0.0.1:3306)")
 		os.Exit(1)
@@ -45,7 +50,7 @@ func main() {
 	authRepo := database.NewRepository(db)
 
 	fs := flag.NewFlagSet("pharmacist", flag.ExitOnError)
-	grpcAddr := fs.String("grpc-addr", ":8082", "grpc listen address")
+	grpcAddr := fs.String("grpc-addr", ":8080", "grpc listen address")
 	var (
 		service    = auth.NewBasicAuthService(logger, authRepo.(database.AuthRepository), os.Getenv("JWT_SECRET"))
 		endpoints  = auth.MakeEndpoints(service)
