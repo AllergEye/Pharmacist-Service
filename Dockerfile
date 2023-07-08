@@ -10,4 +10,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /pharmacist-service
 
 EXPOSE 8080
 
-CMD ["/pharmacist-service"]
+CMD ["/us-central1-docker.pkg.dev/reezan-visram-projects/pharmacist-service"]
