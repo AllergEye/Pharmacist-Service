@@ -29,10 +29,12 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	err := godotenv.Load()
-	if err != nil {
-		logger.Log("could not load .env file")
-		os.Exit(1)
+	if os.Getenv("ENVIRONMENT") != "prod" {
+		err := godotenv.Load()
+		if err != nil {
+			logger.Log("could not load .env file")
+			os.Exit(1)
+		}
 	}
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
