@@ -24,7 +24,7 @@ type AuthService interface {
 	AuthenticateUser(ctx context.Context, email string, password string) (string, error)
 }
 
-type authService struct {
+type AuthServiceImplementation struct {
 	Logger         log.Logger
 	AuthRepository database.Repository
 	JwtSecret      string
@@ -35,14 +35,14 @@ var (
 )
 
 func NewBasicAuthService(logger log.Logger, authRepository database.AuthRepository, jwtSecret string) AuthService {
-	return authService{
+	return AuthServiceImplementation{
 		Logger:         logger,
 		AuthRepository: authRepository,
 		JwtSecret:      jwtSecret,
 	}
 }
 
-func (s authService) GetUserById(ctx context.Context, userId string) (string, error) {
+func (s AuthServiceImplementation) GetUserById(ctx context.Context, userId string) (string, error) {
 	s.Logger.Log("service.GetUserById: userId", userId)
 	if userId == "Reezan" {
 		return "Reezan", nil
@@ -51,7 +51,7 @@ func (s authService) GetUserById(ctx context.Context, userId string) (string, er
 	return "", ErrUserNotFound
 }
 
-func (s authService) CreateUser(ctx context.Context, email string, firstName string, lastName string, password string) (string, error) {
+func (s AuthServiceImplementation) CreateUser(ctx context.Context, email string, firstName string, lastName string, password string) (string, error) {
 	s.Logger.Log("service.CreateUser: Creating user. email", email, "firstName", firstName, "lastName", lastName)
 
 	if s.AuthRepository.UserExistsWithEmail(email) {
@@ -80,7 +80,7 @@ func (s authService) CreateUser(ctx context.Context, email string, firstName str
 	return tokenString, nil
 }
 
-func (s authService) AuthenticateUser(ctx context.Context, email string, password string) (string, error) {
+func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email string, password string) (string, error) {
 	s.Logger.Log("service.AuthenticateUser: Authenticating user. email", email)
 
 	user, err := s.AuthRepository.GetUserByEmail(email)

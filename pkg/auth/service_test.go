@@ -1,10 +1,12 @@
-package auth
+package auth_test
 
 import (
 	"context"
 	"errors"
 	"os"
 	"testing"
+
+	. "github.com/reezanvisram/allergeye/pharmacist/pkg/auth"
 
 	"github.com/go-kit/log"
 	"github.com/golang/mock/gomock"
@@ -30,8 +32,8 @@ func makeMocks(t *testing.T) mock {
 	}
 }
 
-func makeFakeService(m mock) authService {
-	return authService{
+func makeFakeService(m mock) AuthServiceImplementation {
+	return AuthServiceImplementation{
 		Logger:         m.logger,
 		AuthRepository: m.authRepo,
 	}
