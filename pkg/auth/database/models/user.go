@@ -2,9 +2,10 @@ package models
 
 type User struct {
 	Base
-	FirstName    string
-	LastName     string
-	Email        string
-	Password     string
-	RefreshToken RefreshToken
+	FirstName      string
+	LastName       string
+	Email          string
+	Password       string
+	RefreshTokenID string
+	RefreshToken   RefreshToken
 }

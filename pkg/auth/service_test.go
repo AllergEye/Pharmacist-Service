@@ -35,7 +35,7 @@ func makeMocks(t *testing.T) mock {
 func makeFakeService(m mock) AuthServiceImplementation {
 	return AuthServiceImplementation{
 		Logger:         m.logger,
-		AuthRepository: m.authRepo,
+		UserRepository: m.authRepo,
 	}
 }
 

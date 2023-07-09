@@ -49,22 +49,22 @@ func makeGetUserByIdEndpoint(s AuthService) endpoint.Endpoint {
 func makeCreateUserEndpoint(s AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(CreateUserRequest)
-		accessToken, err := s.CreateUser(ctx, req.Email, req.FirstName, req.LastName, req.Password)
+		tokenPair, err := s.CreateUser(ctx, req.Email, req.FirstName, req.LastName, req.Password)
 		if err != nil {
 			return CreateUserResponse{}, err
 		}
-		return CreateUserResponse{AccessToken: accessToken, Err: nil}, nil
+		return CreateUserResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken, Err: nil}, nil
 	}
 }
 
 func makeAuthenticateUserEndpoint(s AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(AuthenticateUserRequest)
-		accessToken, err := s.AuthenticateUser(ctx, req.Email, req.Password)
+		tokenPair, err := s.AuthenticateUser(ctx, req.Email, req.Password)
 		if err != nil {
 			return AuthenticateUserResponse{}, err
 		}
-		return AuthenticateUserResponse{AccessToken: accessToken, Err: nil}, nil
+		return AuthenticateUserResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken, Err: nil}, nil
 	}
 }
 

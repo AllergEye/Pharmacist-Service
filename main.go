@@ -48,13 +48,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	db.AutoMigrate(&models.User{})
-	authRepo := database.NewRepository(db)
+	db.AutoMigrate(&models.User{}, &models.RefreshToken{})
+	userRepo := database.NewUserRepository(db)
+	tokenRepo := database.NewTokenRepository(db)
 
 	fs := flag.NewFlagSet("pharmacist", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8080", "grpc listen address")
 	var (
-		service    = auth.NewBasicAuthService(logger, authRepo.(database.AuthRepository), os.Getenv("JWT_SECRET"))
+		service    = auth.NewBasicAuthService(logger, userRepo, tokenRepo, os.Getenv("JWT_SECRET"))
 		endpoints  = auth.MakeEndpoints(service)
 		grpcServer = auth.NewGRPCServer(endpoints)
 	)
