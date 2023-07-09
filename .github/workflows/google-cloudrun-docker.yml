@@ -45,8 +45,12 @@
 name: Build and Deploy to Cloud Run
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows:
+      - "Build and Test"
+    branches: [main]
+    types:
+      - completed
 
 env:
   PROJECT_ID: reezan-visram-projects # TODO: update Google Cloud project id
@@ -66,6 +70,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        if: steps.build.outcome == 'success'
 
       # NOTE: Alternative option - authentication via credentials json
       - name: Google Auth
