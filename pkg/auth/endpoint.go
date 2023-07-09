@@ -85,8 +85,9 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	AccessToken string `json:"accessToken"`
-	Err         error  `json:"error"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	Err          error  `json:"error"`
 }
 
 type AuthenticateUserRequest struct {
@@ -95,6 +96,7 @@ type AuthenticateUserRequest struct {
 }
 
 type AuthenticateUserResponse struct {
-	AccessToken string `json:"accessToken"`
-	Err         error  `json:"error"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	Err          error  `json:"error"`
 }

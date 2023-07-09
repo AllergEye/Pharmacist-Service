@@ -87,7 +87,7 @@ func decodeGRPCCreateUserRequest(_ context.Context, grpcReq interface{}) (interf
 
 func encodeGRPCCreateUserResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	resp := grpcRes.(CreateUserResponse)
-	return &pb.CreateUserResponse{AccessToken: resp.AccessToken}, nil
+	return &pb.CreateUserResponse{AccessToken: resp.AccessToken, RefreshToken: resp.RefreshToken}, nil
 }
 
 func decodeGRPCAuthenticateUserRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
@@ -97,5 +97,5 @@ func decodeGRPCAuthenticateUserRequest(_ context.Context, grpcReq interface{}) (
 
 func encodeGRPCAuthenticateUserResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	resp := grpcRes.(AuthenticateUserResponse)
-	return &pb.AuthenticateUserResponse{AccessToken: resp.AccessToken}, nil
+	return &pb.AuthenticateUserResponse{AccessToken: resp.AccessToken, RefreshToken: resp.RefreshToken}, nil
 }

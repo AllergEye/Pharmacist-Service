@@ -7,15 +7,18 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/database"
 )
 
 var (
-	ErrUserWithEmailExists = errors.New("user with that email already exists")
-	ErrUserDoesNotExist    = errors.New("user does not exist")
-	ErrIncorrectPassword   = errors.New("incorrect password")
-	ErrCouldNotCreateUser  = errors.New("could not create user")
-	ErrUnknownError        = errors.New("an unknown error occurred")
+	ErrUserWithEmailExists        = errors.New("user with that email already exists")
+	ErrUserDoesNotExist           = errors.New("user does not exist")
+	ErrIncorrectPassword          = errors.New("incorrect password")
+	ErrCouldNotCreateUser         = errors.New("could not create user")
+	ErrUnknownError               = errors.New("an unknown error occurred")
+	ErrUserNotFound               = errors.New("user not found")
+	ErrCouldNotCreateRefreshToken = errors.New("could not create refresh token")
 )
 
 type AuthService interface {
@@ -29,10 +32,6 @@ type authService struct {
 	AuthRepository database.Repository
 	JwtSecret      string
 }
-
-var (
-	ErrUserNotFound = errors.New("user not found")
-)
 
 func NewBasicAuthService(logger log.Logger, authRepository database.AuthRepository, jwtSecret string) AuthService {
 	return authService{
@@ -59,14 +58,26 @@ func (s authService) CreateUser(ctx context.Context, email string, firstName str
 		return "", ErrUserWithEmailExists
 	}
 
-	user, err := s.AuthRepository.InsertUser(email, firstName, lastName, password)
+	generatedRefreshToken, jti := generateRefreshToken()
+
+	expiresAt, err := generatedRefreshToken.Claims.GetExpirationTime()
+	if err != nil {
+		return "", err
+	}
+
+	refreshToken, err := s.AuthRepository.InsertRefreshToken(jti, expiresAt.Time)
+	if err != nil {
+		return "", ErrCouldNotCreateRefreshToken
+	}
+
+	user, err := s.AuthRepository.InsertUser(email, firstName, lastName, password, refreshToken)
 	if err != nil {
 		return "", ErrCouldNotCreateUser
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss":       "pharmacist",
-		"exp":       time.Now().Add(time.Hour * time.Duration(24)),
+		"exp":       time.Now().Add(time.Minute * time.Duration(30)),
 		"userId":    user.ID,
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
@@ -78,6 +89,17 @@ func (s authService) CreateUser(ctx context.Context, email string, firstName str
 	}
 
 	return tokenString, nil
+}
+
+func generateRefreshToken() (*jwt.Token, string) {
+	jti := uuid.New()
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
+		"iss": "pharmacist",
+		"exp": time.Now().Add(time.Hour * time.Duration(24*30)),
+		"jti": jti,
+	})
+
+	return refreshToken, jti.String()
 }
 
 func (s authService) AuthenticateUser(ctx context.Context, email string, password string) (string, error) {

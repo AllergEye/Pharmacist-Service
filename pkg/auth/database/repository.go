@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"time"
 
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/database/models"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +19,8 @@ type AuthRepository struct {
 }
 
 type Repository interface {
-	InsertUser(email string, firstName string, lastName string, password string) (*models.User, error)
+	InsertUser(email string, firstName string, lastName string, password string, refreshToken *models.RefreshToken) (*models.User, error)
+	InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error)
 	UserExistsWithEmail(email string) bool
 	GetUserByEmail(email string) (*models.User, error)
 	HashPassword(password string) (string, error)
@@ -31,17 +33,18 @@ func NewRepository(db *gorm.DB) Repository {
 	}
 }
 
-func (r AuthRepository) InsertUser(email string, firstName string, lastName string, password string) (*models.User, error) {
+func (r AuthRepository) InsertUser(email string, firstName string, lastName string, password string, refreshToken *models.RefreshToken) (*models.User, error) {
 	hashedPwd, err := r.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
 	user := models.User{
-		Email:     email,
-		FirstName: firstName,
-		LastName:  lastName,
-		Password:  hashedPwd,
+		Email:        email,
+		FirstName:    firstName,
+		LastName:     lastName,
+		Password:     hashedPwd,
+		RefreshToken: *refreshToken,
 	}
 
 	result := r.DB.Create(&user)
@@ -51,6 +54,21 @@ func (r AuthRepository) InsertUser(email string, firstName string, lastName stri
 	}
 
 	return &user, nil
+}
+
+func (r AuthRepository) InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error) {
+	refreshToken := models.RefreshToken{
+		Jti:       jti,
+		ExpiresAt: expiresAt,
+	}
+
+	result := r.DB.Create(&refreshToken)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &refreshToken, nil
 }
 
 func (r AuthRepository) UserExistsWithEmail(email string) bool {

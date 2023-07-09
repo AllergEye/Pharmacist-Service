@@ -26,6 +26,7 @@ message CreateUserRequest {
 
 message CreateUserResponse {
     string accessToken = 1;
+    string refreshToken = 2;
 }
 
 message AuthenticateUserRequest {
@@ -35,4 +36,5 @@ message AuthenticateUserRequest {
 
 message AuthenticateUserResponse {
     string accessToken = 1;
+    string refreshToken = 2;
 }
