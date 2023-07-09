@@ -52,7 +52,7 @@ env:
   PROJECT_ID: reezan-visram-projects # TODO: update Google Cloud project id
   GAR_LOCATION: us-central1 # TODO: update Artifact Registry location
   SERVICE: pharmacist-service # TODO: update Cloud Run service name
-  REGION: us-central1-c # TODO: update Cloud Run service region
+  REGION: us-central1 # TODO: update Cloud Run service region
 
 jobs:
   deploy:
