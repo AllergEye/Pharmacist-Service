@@ -44,10 +44,7 @@
 
 name: Build and Deploy to Cloud Run
 
-on:
-  push:
-    branches:
-      - "main"
+on: [push]
 
 env:
   PROJECT_ID: reezan-visram-projects # TODO: update Google Cloud project id
@@ -55,10 +52,28 @@ env:
   SERVICE: pharmacist-service # TODO: update Cloud Run service name
   REPOSITORY: pharmacist-service
   REGION: us-central1 # TODO: update Cloud Run service region
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
 
 jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set Up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20.5'
+        
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...
+
   deploy:
-    # Add 'id-token' with the intended permissions for workload identity federation
+    if: ${{ env.BRANCH_NAME }} == 'main'
+    needs: build_and_test
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -67,8 +82,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      # NOTE: Alternative option - authentication via credentials json
       - name: Google Auth
         id: auth
         uses: 'google-github-actions/auth@v0'
