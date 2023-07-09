@@ -39,12 +39,12 @@ func main() {
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_DATABASE"))
 	if os.Getenv("ENVIRONMENT") == "prod" {
-		dsn = fmt.Sprintf("%v:%v@cloudsql(%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_UNIX_SOCKET"), os.Getenv("DB_DATABASE"))
+		dsn = fmt.Sprintf("%v:%v@unix(%v)/%v?parseTime=true", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_UNIX_SOCKET"), os.Getenv("DB_DATABASE"))
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		logger.Log("could not connect to database at", "tcp(127.0.0.1:3306)")
+		logger.Log("could not connect to database at", dsn)
 		os.Exit(1)
 	}
 
