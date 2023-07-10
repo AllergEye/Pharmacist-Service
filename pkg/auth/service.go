@@ -69,11 +69,8 @@ func (s AuthServiceImplementation) CreateUser(ctx context.Context, email string,
 
 	s.Logger.Log("service.CreateUser", "Creating refresh token")
 	generatedRefreshToken, expiresAt, jti := generateRefreshToken()
-	refreshToken := models.RefreshToken{
-		Jti:       jti,
-		ExpiresAt: expiresAt,
-	}
-	user, err := s.UserRepository.InsertUser(email, firstName, lastName, password, &refreshToken)
+	refreshToken := models.NewRefreshToken(jti, expiresAt)
+	user, err := s.UserRepository.InsertUser(email, firstName, lastName, password, refreshToken)
 	if err != nil {
 		s.Logger.Log("service.CreateUser", "Could not create user", "email", email)
 		return tokenPair{}, ErrCouldNotCreateUser
@@ -127,15 +124,20 @@ func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email s
 		return tokenPair{}, ErrIncorrectPassword
 	}
 
-	oldJti := user.RefreshToken.Jti
-	err = s.UserRepository.ClearRefreshToken(user)
+	oldRefreshToken, err := s.TokenRepository.GetRefreshTokenById(user.RefreshTokenID)
 	if err != nil {
-		return tokenPair{}, err
+		s.Logger.Log("service.CreateUser", "Could not get refresh token by id", "refreshTokenId", user.RefreshTokenID)
+		return tokenPair{}, nil
 	}
-	err = s.TokenRepository.DeleteRefreshTokenByJTI(oldJti)
-	if err != nil {
-		return tokenPair{}, err
-	}
+	// oldJti := user.RefreshToken.Jti
+	// err = s.UserRepository.ClearRefreshToken(user)
+	// if err != nil {
+	// 	return tokenPair{}, err
+	// }
+	// err = s.TokenRepository.DeleteRefreshTokenByJTI(oldJti)
+	// if err != nil {
+	// 	return tokenPair{}, err
+	// }
 
 	generatedRefreshToken, expiresAt, jti := generateRefreshToken()
 	refreshToken, err := s.TokenRepository.InsertRefreshToken(jti, expiresAt)
@@ -149,6 +151,11 @@ func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email s
 		return tokenPair{}, ErrCouldNotCreateRefreshToken
 	}
 
+	err = s.TokenRepository.DeleteRefreshToken(oldRefreshToken)
+	if err != nil {
+		s.Logger.Log("service.CreateUser", "could not delete old refresh token")
+		return tokenPair{}, err
+	}
 	generatedAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iss":       "pharmacist",
 		"exp":       time.Now().Add(time.Hour * time.Duration(24)),

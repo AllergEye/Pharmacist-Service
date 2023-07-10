@@ -1,0 +1,1 @@
+SELECT * FROM allergeye.refresh_tokens;

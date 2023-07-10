@@ -34,26 +34,20 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r UserRepositoryImplementation) InsertUser(email string, firstName string, lastName string, password string, refreshToken *models.RefreshToken) (*models.User, error) {
-	hashedPwd, err := r.HashPassword(password)
+	hashedPassword, err := r.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
-	user := models.User{
-		Email:        email,
-		FirstName:    firstName,
-		LastName:     lastName,
-		Password:     hashedPwd,
-		RefreshToken: *refreshToken,
-	}
+	user := models.NewUser(firstName, lastName, email, hashedPassword, *refreshToken)
 
-	result := r.DB.Create(&user)
+	result := r.DB.Create(user)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (r UserRepositoryImplementation) UserExistsWithEmail(email string) bool {

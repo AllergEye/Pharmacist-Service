@@ -8,8 +8,9 @@ import (
 )
 
 type TokenRepository interface {
+	GetRefreshTokenById(refreshTokenId string) (*models.RefreshToken, error)
 	InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error)
-	DeleteRefreshTokenByJTI(jti string) error
+	DeleteRefreshToken(refreshToken *models.RefreshToken) error
 }
 
 type TokenRepositoryImplementation struct {
@@ -22,13 +23,10 @@ func NewTokenRepository(db *gorm.DB) TokenRepository {
 	}
 }
 
-func (r TokenRepositoryImplementation) InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error) {
-	refreshToken := models.RefreshToken{
-		Jti:       jti,
-		ExpiresAt: expiresAt,
-	}
+func (r TokenRepositoryImplementation) GetRefreshTokenById(refreshTokenId string) (*models.RefreshToken, error) {
+	refreshToken := models.RefreshToken{}
 
-	result := r.DB.Create(&refreshToken)
+	result := r.DB.First(&refreshToken, "id = ?", refreshTokenId)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -37,12 +35,20 @@ func (r TokenRepositoryImplementation) InsertRefreshToken(jti string, expiresAt 
 	return &refreshToken, nil
 }
 
-func (r TokenRepositoryImplementation) DeleteRefreshTokenByJTI(jti string) error {
-	refreshToken := models.RefreshToken{
-		Jti: jti,
+func (r TokenRepositoryImplementation) InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error) {
+	refreshToken := models.NewRefreshToken(jti, expiresAt)
+
+	result := r.DB.Create(refreshToken)
+
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
-	result := r.DB.Where("jti = ?", jti).Delete(&refreshToken)
+	return refreshToken, nil
+}
+
+func (r TokenRepositoryImplementation) DeleteRefreshToken(oldRefreshToken *models.RefreshToken) error {
+	result := r.DB.Where("jti = ?", oldRefreshToken.Jti).Delete(oldRefreshToken)
 
 	return result.Error
 }
