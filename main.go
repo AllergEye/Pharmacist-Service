@@ -16,6 +16,7 @@ import (
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth"
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/database"
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/database/models"
+	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/lib"
 	"google.golang.org/grpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -51,11 +52,12 @@ func main() {
 	db.AutoMigrate(&models.User{}, &models.RefreshToken{})
 	userRepo := database.NewUserRepository(db)
 	tokenRepo := database.NewTokenRepository(db)
+	helpers := lib.NewHelpers()
 
 	fs := flag.NewFlagSet("pharmacist", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8080", "grpc listen address")
 	var (
-		service    = auth.NewBasicAuthService(logger, userRepo, tokenRepo, os.Getenv("JWT_SECRET"))
+		service    = auth.NewBasicAuthService(logger, userRepo, tokenRepo, helpers, os.Getenv("JWT_SECRET"))
 		endpoints  = auth.MakeEndpoints(service)
 		grpcServer = auth.NewGRPCServer(endpoints)
 	)

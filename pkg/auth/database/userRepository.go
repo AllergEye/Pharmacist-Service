@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/reezanvisram/allergeye/pharmacist/pkg/auth/database/models"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -14,13 +13,11 @@ var (
 )
 
 type UserRepository interface {
-	InsertUser(email string, firstName string, lastName string, password string, refreshToken *models.RefreshToken) (*models.User, error)
+	InsertUser(email string, firstName string, lastName string, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error)
 	UserExistsWithEmail(email string) bool
 	GetUserByEmail(email string) (*models.User, error)
 	UpdateUserRefreshToken(user *models.User, refreshToken *models.RefreshToken) error
 	ClearRefreshToken(user *models.User) error
-	HashPassword(password string) (string, error)
-	CheckPasswordHash(password string, hash string) bool
 }
 
 type UserRepositoryImplementation struct {
@@ -33,12 +30,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (r UserRepositoryImplementation) InsertUser(email string, firstName string, lastName string, password string, refreshToken *models.RefreshToken) (*models.User, error) {
-	hashedPassword, err := r.HashPassword(password)
-	if err != nil {
-		return nil, err
-	}
-
+func (r UserRepositoryImplementation) InsertUser(email string, firstName string, lastName string, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error) {
 	user := models.NewUser(firstName, lastName, email, hashedPassword, *refreshToken)
 
 	result := r.DB.Create(user)
@@ -81,18 +73,4 @@ func (r UserRepositoryImplementation) ClearRefreshToken(user *models.User) error
 	result := r.DB.Model(user).Select("refresh_token_id").Updates(map[string]interface{}{"refresh_token_id": nil})
 
 	return result.Error
-}
-
-func (r UserRepositoryImplementation) HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	if err != nil {
-		return "", ErrCouldNotGenerateHash
-	}
-	return string(bytes), nil
-}
-
-func (r UserRepositoryImplementation) CheckPasswordHash(password string, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-
-	return err == nil
 }

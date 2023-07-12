@@ -17,25 +17,29 @@ import (
 )
 
 type mock struct {
-	authRepo *mock_database.AuthRepository
-	logger   log.Logger
+	userRepo  *mock_database.MockUserRepository
+	tokenRepo *mock_database.MockTokenRepository
+	logger    log.Logger
 }
 
 func makeMocks(t *testing.T) mock {
 	ctrl := gomock.NewController(t)
-	authRepo := mock_database.NewAuthRepository(ctrl)
+	userRepo := mock_database.NewMockUserRepository(ctrl)
+	tokenRepo := mock_database.NewMockTokenRepository(ctrl)
 	logger := log.NewJSONLogger(os.Stderr)
 
 	return mock{
-		authRepo: authRepo,
-		logger:   logger,
+		userRepo:  userRepo,
+		tokenRepo: tokenRepo,
+		logger:    logger,
 	}
 }
 
 func makeFakeService(m mock) AuthServiceImplementation {
 	return AuthServiceImplementation{
-		Logger:         m.logger,
-		UserRepository: m.authRepo,
+		Logger:          m.logger,
+		UserRepository:  m.userRepo,
+		TokenRepository: m.tokenRepo,
 	}
 }
 
@@ -95,15 +99,15 @@ func Test_CreateUser(t *testing.T) {
 		"it returns success if no user with the given email exists and the user is sucessfully inserted": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().UserExistsWithEmail(email).Return(false)
-				m.authRepo.EXPECT().InsertUser(email, firstName, lastName, password).Return(&user, nil)
+				m.userRepo.EXPECT().UserExistsWithEmail(email).Return(false)
+				m.userRepo.EXPECT().InsertUser(email, firstName, lastName, password).Return(&user, nil)
 				return m
 			},
 		},
 		"it returns an error if a user exists with the given email": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().UserExistsWithEmail(email).Return(true)
+				m.userRepo.EXPECT().UserExistsWithEmail(email).Return(true)
 				return m
 			},
 			expectedErr: ErrUserWithEmailExists,
@@ -111,8 +115,8 @@ func Test_CreateUser(t *testing.T) {
 		"it returns an error if the user could not be inserted": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().UserExistsWithEmail(email).Return(false)
-				m.authRepo.EXPECT().InsertUser(email, firstName, lastName, password).Return(nil, randomErr)
+				m.userRepo.EXPECT().UserExistsWithEmail(email).Return(false)
+				m.userRepo.EXPECT().InsertUser(email, firstName, lastName, password).Return(nil, randomErr)
 				return m
 			},
 			expectedErr: ErrCouldNotCreateUser,
@@ -149,15 +153,15 @@ func Test_AuthenticateUser(t *testing.T) {
 		"successfully authenticates a user if the given username and password match": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().GetUserByEmail(email).Return(&user, nil)
-				m.authRepo.EXPECT().CheckPasswordHash(password, user.Password).Return(true)
+				m.userRepo.EXPECT().GetUserByEmail(email).Return(&user, nil)
+				m.userRepo.EXPECT().CheckPasswordHash(password, user.Password).Return(true)
 				return m
 			},
 		},
 		"returns an error if a user with the given email does not exist": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().GetUserByEmail(email).Return(nil, database.ErrUserWithEmailDoesNotExistDatabaseError)
+				m.userRepo.EXPECT().GetUserByEmail(email).Return(nil, database.ErrUserWithEmailDoesNotExistDatabaseError)
 				return m
 			},
 			expectedErr: ErrUserDoesNotExist,
@@ -165,8 +169,8 @@ func Test_AuthenticateUser(t *testing.T) {
 		"returns an error if the user's password is incorrect": {
 			mocks: func() mock {
 				m := makeMocks(t)
-				m.authRepo.EXPECT().GetUserByEmail(email).Return(&user, nil)
-				m.authRepo.EXPECT().CheckPasswordHash(password, user.Password).Return(false)
+				m.userRepo.EXPECT().GetUserByEmail(email).Return(&user, nil)
+				m.userRepo.EXPECT().CheckPasswordHash(password, user.Password).Return(false)
 				return m
 			},
 			expectedErr: ErrIncorrectPassword,
