@@ -34,20 +34,6 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 	return m.recorder
 }
 
-// CheckPasswordHash mocks base method.
-func (m *MockUserRepository) CheckPasswordHash(password, hash string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckPasswordHash", password, hash)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CheckPasswordHash indicates an expected call of CheckPasswordHash.
-func (mr *MockUserRepositoryMockRecorder) CheckPasswordHash(password, hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckPasswordHash", reflect.TypeOf((*MockUserRepository)(nil).CheckPasswordHash), password, hash)
-}
-
 // ClearRefreshToken mocks base method.
 func (m *MockUserRepository) ClearRefreshToken(user *models.User) error {
 	m.ctrl.T.Helper()
@@ -77,34 +63,19 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByEmail(email interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmail), email)
 }
 
-// HashPassword mocks base method.
-func (m *MockUserRepository) HashPassword(password string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HashPassword", password)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HashPassword indicates an expected call of HashPassword.
-func (mr *MockUserRepositoryMockRecorder) HashPassword(password interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HashPassword", reflect.TypeOf((*MockUserRepository)(nil).HashPassword), password)
-}
-
 // InsertUser mocks base method.
-func (m *MockUserRepository) InsertUser(email, firstName, lastName, password string, refreshToken *models.RefreshToken) (*models.User, error) {
+func (m *MockUserRepository) InsertUser(email, firstName, lastName, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertUser", email, firstName, lastName, password, refreshToken)
+	ret := m.ctrl.Call(m, "InsertUser", email, firstName, lastName, hashedPassword, refreshToken)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertUser indicates an expected call of InsertUser.
-func (mr *MockUserRepositoryMockRecorder) InsertUser(email, firstName, lastName, password, refreshToken interface{}) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) InsertUser(email, firstName, lastName, hashedPassword, refreshToken interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUser", reflect.TypeOf((*MockUserRepository)(nil).InsertUser), email, firstName, lastName, password, refreshToken)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUser", reflect.TypeOf((*MockUserRepository)(nil).InsertUser), email, firstName, lastName, hashedPassword, refreshToken)
 }
 
 // UpdateUserRefreshToken mocks base method.
