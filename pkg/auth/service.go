@@ -69,7 +69,7 @@ func (s AuthServiceImplementation) CreateUser(ctx context.Context, email string,
 		return TokenPair{}, ErrUserWithEmailExists
 	}
 
-	s.Logger.Log("service.CreateUser", "Creating refresh token")
+	s.Logger.Log("service.CreateUser", "Creating refresh token", "email", email)
 	generatedRefreshToken, expiresAt, jti := s.Helpers.GenerateRefreshToken()
 	refreshToken := models.NewRefreshToken(jti, expiresAt)
 	hashedPassword, err := s.Helpers.HashPassword(password)
@@ -127,18 +127,18 @@ func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email s
 	generatedRefreshToken, expiresAt, jti := s.Helpers.GenerateRefreshToken()
 	refreshToken, err := s.TokenRepository.InsertRefreshToken(jti, expiresAt)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "Could not create refresh token")
+		s.Logger.Log("service.CreateUser", "Could not insert refresh token")
 		return TokenPair{}, ErrCouldNotCreateRefreshToken
 	}
 	err = s.UserRepository.UpdateUserRefreshToken(user, refreshToken)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "Could not update refresh token")
+		s.Logger.Log("service.CreateUser", "Could not update user's refresh token", "userId", user.ID, "refreshTokenId", refreshToken.ID)
 		return TokenPair{}, ErrCouldNotCreateRefreshToken
 	}
 
 	err = s.TokenRepository.DeleteRefreshToken(oldRefreshToken)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "could not delete old refresh token")
+		s.Logger.Log("service.CreateUser", "could not delete old refresh token", "userId", user.ID)
 		return TokenPair{}, err
 	}
 	generatedAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

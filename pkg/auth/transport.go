@@ -65,6 +65,8 @@ func (s *grpcServer) AuthenticateUser(ctx context.Context, req *pb.AuthenticateU
 	if err != nil {
 		if errors.Is(err, ErrUserDoesNotExist) || errors.Is(err, ErrIncorrectPassword) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
+		} else if errors.Is(err, ErrCouldNotCreateRefreshToken) {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 	return rep.(*pb.AuthenticateUserResponse), nil
