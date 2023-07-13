@@ -63,6 +63,21 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByEmail(email interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserRepository)(nil).GetUserByEmail), email)
 }
 
+// GetUserByRefreshTokenId mocks base method.
+func (m *MockUserRepository) GetUserByRefreshTokenId(refreshTokenId string) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByRefreshTokenId", refreshTokenId)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByRefreshTokenId indicates an expected call of GetUserByRefreshTokenId.
+func (mr *MockUserRepositoryMockRecorder) GetUserByRefreshTokenId(refreshTokenId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByRefreshTokenId", reflect.TypeOf((*MockUserRepository)(nil).GetUserByRefreshTokenId), refreshTokenId)
+}
+
 // InsertUser mocks base method.
 func (m *MockUserRepository) InsertUser(email, firstName, lastName, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error) {
 	m.ctrl.T.Helper()

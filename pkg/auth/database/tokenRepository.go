@@ -9,6 +9,7 @@ import (
 
 type TokenRepository interface {
 	GetRefreshTokenById(refreshTokenId string) (*models.RefreshToken, error)
+	GetRefreshTokenByJti(refreshTokenJti string) (*models.RefreshToken, error)
 	InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error)
 	DeleteRefreshToken(refreshToken *models.RefreshToken) error
 }
@@ -27,6 +28,18 @@ func (r TokenRepositoryImplementation) GetRefreshTokenById(refreshTokenId string
 	refreshToken := models.RefreshToken{}
 
 	result := r.DB.First(&refreshToken, "id = ?", refreshTokenId)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &refreshToken, nil
+}
+
+func (r TokenRepositoryImplementation) GetRefreshTokenByJti(refreshTokenJti string) (*models.RefreshToken, error) {
+	refreshToken := models.RefreshToken{}
+
+	result := r.DB.First(&refreshToken, "jti = ?", refreshTokenJti)
 
 	if result.Error != nil {
 		return nil, result.Error

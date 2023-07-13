@@ -13,6 +13,7 @@ var (
 )
 
 type UserRepository interface {
+	GetUserByRefreshTokenId(refreshTokenId string) (*models.User, error)
 	InsertUser(email string, firstName string, lastName string, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error)
 	UserExistsWithEmail(email string) bool
 	GetUserByEmail(email string) (*models.User, error)
@@ -28,6 +29,18 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return UserRepositoryImplementation{
 		DB: db,
 	}
+}
+
+func (r UserRepositoryImplementation) GetUserByRefreshTokenId(refreshTokenId string) (*models.User, error) {
+	user := models.User{}
+
+	result := r.DB.First(&user, "refresh_token_id = ?", refreshTokenId)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
 }
 
 func (r UserRepositoryImplementation) InsertUser(email string, firstName string, lastName string, hashedPassword string, refreshToken *models.RefreshToken) (*models.User, error) {

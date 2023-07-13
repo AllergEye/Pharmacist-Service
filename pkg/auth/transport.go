@@ -11,9 +11,10 @@ import (
 )
 
 type grpcServer struct {
-	getUserById      grpctransport.Handler
-	createUser       grpctransport.Handler
-	authenticateUser grpctransport.Handler
+	getUserById                         grpctransport.Handler
+	createUser                          grpctransport.Handler
+	authenticateUser                    grpctransport.Handler
+	generateAccessTokenFromRefreshToken grpctransport.Handler
 }
 
 func NewGRPCServer(endpoints Endpoints) pb.AuthServer {
@@ -33,6 +34,11 @@ func NewGRPCServer(endpoints Endpoints) pb.AuthServer {
 			decodeGRPCAuthenticateUserRequest,
 			encodeGRPCAuthenticateUserResponse,
 		),
+		generateAccessTokenFromRefreshToken: grpctransport.NewServer(
+			endpoints.GenerateAccessTokenFromRefreshToken,
+			decodeGRPCGenerateAccessTokenFromRefreshTokenRequest,
+			encodeGRPCGenerateAccessTokenFromRefreshTokenResponse,
+		),
 	}
 }
 
@@ -50,10 +56,12 @@ func (s *grpcServer) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest
 func (s *grpcServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	_, rep, err := s.createUser.ServeGRPC(ctx, req)
 	if err != nil {
-		if errors.Is(err, ErrCouldNotCreateUser) {
-			return nil, status.Error(codes.Unknown, err.Error())
-		} else if errors.Is(err, ErrUserWithEmailExists) {
-			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		errorsMap := map[error]error{
+			ErrCouldNotCreateUser:  status.Error(codes.Unknown, err.Error()),
+			ErrUserWithEmailExists: status.Error(codes.FailedPrecondition, err.Error()),
+		}
+		if mappedErr := errorsMap[err]; mappedErr != nil {
+			return nil, mappedErr
 		}
 		return nil, err
 	}
@@ -62,14 +70,35 @@ func (s *grpcServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) 
 
 func (s *grpcServer) AuthenticateUser(ctx context.Context, req *pb.AuthenticateUserRequest) (*pb.AuthenticateUserResponse, error) {
 	_, rep, err := s.authenticateUser.ServeGRPC(ctx, req)
+
 	if err != nil {
-		if errors.Is(err, ErrUserDoesNotExist) || errors.Is(err, ErrIncorrectPassword) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		} else if errors.Is(err, ErrCouldNotCreateRefreshToken) {
-			return nil, status.Error(codes.Internal, err.Error())
+		errorsMap := map[error]error{
+			ErrUserDoesNotExist:           status.Error(codes.InvalidArgument, err.Error()),
+			ErrIncorrectPassword:          status.Error(codes.PermissionDenied, err.Error()),
+			ErrCouldNotCreateRefreshToken: status.Error(codes.Internal, err.Error()),
 		}
+		if mappedErr := errorsMap[err]; mappedErr != nil {
+			return nil, mappedErr
+		}
+		return nil, err
 	}
 	return rep.(*pb.AuthenticateUserResponse), nil
+}
+
+func (s *grpcServer) GenerateAccessTokenFromRefreshToken(ctx context.Context, req *pb.GenerateAccessTokenFromRefreshTokenRequest) (*pb.GenerateAccessTokenFromRefreshTokenResponse, error) {
+	_, rep, err := s.generateAccessTokenFromRefreshToken.ServeGRPC(ctx, req)
+	if err != nil {
+		errorsMap := map[error]error{
+			ErrInvalidToken:               status.Error(codes.PermissionDenied, err.Error()),
+			ErrCouldNotCreateRefreshToken: status.Error(codes.Internal, err.Error()),
+		}
+		if mappedErr := errorsMap[err]; mappedErr != nil {
+			return nil, mappedErr
+		}
+		return nil, err
+	}
+
+	return rep.(*pb.GenerateAccessTokenFromRefreshTokenResponse), nil
 }
 
 func decodeGRPCGetUserByIdRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
@@ -100,4 +129,14 @@ func decodeGRPCAuthenticateUserRequest(_ context.Context, grpcReq interface{}) (
 func encodeGRPCAuthenticateUserResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	resp := grpcRes.(AuthenticateUserResponse)
 	return &pb.AuthenticateUserResponse{AccessToken: resp.AccessToken, RefreshToken: resp.RefreshToken}, nil
+}
+
+func decodeGRPCGenerateAccessTokenFromRefreshTokenRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.GenerateAccessTokenFromRefreshTokenRequest)
+	return GenerateAccessTokenFromRefreshTokenRequest{RefreshToken: req.RefreshToken}, nil
+}
+
+func encodeGRPCGenerateAccessTokenFromRefreshTokenResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
+	resp := grpcRes.(GenerateAccessTokenFromRefreshTokenResponse)
+	return &pb.GenerateAccessTokenFromRefreshTokenResponse{AccessToken: resp.AccessToken, RefreshToken: resp.RefreshToken}, nil
 }

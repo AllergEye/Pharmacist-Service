@@ -65,6 +65,21 @@ func (mr *MockAuthServiceMockRecorder) CreateUser(ctx, email, firstName, lastNam
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthService)(nil).CreateUser), ctx, email, firstName, lastName, password)
 }
 
+// GenerateAccessTokenFromRefreshToken mocks base method.
+func (m *MockAuthService) GenerateAccessTokenFromRefreshToken(ctx context.Context, refreshTokenString string) (auth.TokenPair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateAccessTokenFromRefreshToken", ctx, refreshTokenString)
+	ret0, _ := ret[0].(auth.TokenPair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateAccessTokenFromRefreshToken indicates an expected call of GenerateAccessTokenFromRefreshToken.
+func (mr *MockAuthServiceMockRecorder) GenerateAccessTokenFromRefreshToken(ctx, refreshTokenString interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateAccessTokenFromRefreshToken", reflect.TypeOf((*MockAuthService)(nil).GenerateAccessTokenFromRefreshToken), ctx, refreshTokenString)
+}
+
 // GetUserById mocks base method.
 func (m *MockAuthService) GetUserById(ctx context.Context, userId string) (string, error) {
 	m.ctrl.T.Helper()

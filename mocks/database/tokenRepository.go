@@ -64,6 +64,21 @@ func (mr *MockTokenRepositoryMockRecorder) GetRefreshTokenById(refreshTokenId in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefreshTokenById", reflect.TypeOf((*MockTokenRepository)(nil).GetRefreshTokenById), refreshTokenId)
 }
 
+// GetRefreshTokenByJti mocks base method.
+func (m *MockTokenRepository) GetRefreshTokenByJti(refreshTokenJti string) (*models.RefreshToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefreshTokenByJti", refreshTokenJti)
+	ret0, _ := ret[0].(*models.RefreshToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefreshTokenByJti indicates an expected call of GetRefreshTokenByJti.
+func (mr *MockTokenRepositoryMockRecorder) GetRefreshTokenByJti(refreshTokenJti interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefreshTokenByJti", reflect.TypeOf((*MockTokenRepository)(nil).GetRefreshTokenByJti), refreshTokenJti)
+}
+
 // InsertRefreshToken mocks base method.
 func (m *MockTokenRepository) InsertRefreshToken(jti string, expiresAt time.Time) (*models.RefreshToken, error) {
 	m.ctrl.T.Helper()

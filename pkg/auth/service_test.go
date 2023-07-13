@@ -294,3 +294,7 @@ func Test_AuthenticateUser(t *testing.T) {
 		})
 	}
 }
+
+func Test_GenerateAccessTokenFromRefreshToken(t *testing.T) {
+
+}

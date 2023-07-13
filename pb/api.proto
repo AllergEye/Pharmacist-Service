@@ -7,6 +7,7 @@ service Auth {
     rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse) {}
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {}
     rpc AuthenticateUser(AuthenticateUserRequest) returns (AuthenticateUserResponse) {}
+    rpc GenerateAccessTokenFromRefreshToken(GenerateAccessTokenFromRefreshTokenRequest) returns (GenerateAccessTokenFromRefreshTokenResponse) {}
 }
 
 message GetUserByIdRequest {
@@ -35,6 +36,15 @@ message AuthenticateUserRequest {
 }
 
 message AuthenticateUserResponse {
+    string accessToken = 1;
+    string refreshToken = 2;
+}
+
+message GenerateAccessTokenFromRefreshTokenRequest {
+    string refreshToken = 1;
+}
+
+message GenerateAccessTokenFromRefreshTokenResponse {
     string accessToken = 1;
     string refreshToken = 2;
 }

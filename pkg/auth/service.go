@@ -21,6 +21,8 @@ var (
 	ErrUserNotFound               = errors.New("user not found")
 	ErrCouldNotCreateRefreshToken = errors.New("could not create refresh token")
 	ErrcouldNotUpdateRefreshToken = errors.New("could not update refresh token")
+	ErrUnexpectedSigningMethod    = errors.New("unexpected signing method")
+	ErrInvalidToken               = errors.New("invalid token")
 )
 
 type TokenPair struct {
@@ -28,10 +30,17 @@ type TokenPair struct {
 	RefreshToken string
 }
 
+type refreshTokenClaims struct {
+	jwt.RegisteredClaims
+	Jti       string    `json:"jti"`
+	ExpiresAt time.Time `json:"exp"`
+}
+
 type AuthService interface {
 	GetUserById(ctx context.Context, userId string) (string, error)
 	CreateUser(ctx context.Context, email string, firstName string, lastName string, password string) (TokenPair, error)
 	AuthenticateUser(ctx context.Context, email string, password string) (TokenPair, error)
+	GenerateAccessTokenFromRefreshToken(ctx context.Context, refreshTokenString string) (TokenPair, error)
 }
 
 type AuthServiceImplementation struct {
@@ -83,11 +92,9 @@ func (s AuthServiceImplementation) CreateUser(ctx context.Context, email string,
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss":       "pharmacist",
-		"exp":       time.Now().Add(time.Minute * time.Duration(30)),
-		"userId":    user.ID,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
+		"iss":    "pharmacist",
+		"exp":    time.Now().Add(time.Hour * time.Duration(1)),
+		"userId": user.ID,
 	})
 
 	accessTokenString, err := accessToken.SignedString([]byte(s.JwtSecret))
@@ -120,33 +127,80 @@ func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email s
 
 	oldRefreshToken, err := s.TokenRepository.GetRefreshTokenById(user.RefreshTokenID)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "Could not get refresh token by id", "refreshTokenId", user.RefreshTokenID)
+		s.Logger.Log("service.AuthenticateUser", "Could not get refresh token by id", "refreshTokenId", user.RefreshTokenID)
 		return TokenPair{}, err
 	}
 
+	tokenPair, err := s.generateNewRefreshTokenAndRemoveExistingRefreshToken(user, oldRefreshToken)
+	if err != nil {
+		s.Logger.Log("service.AuthenticateUser", "Could not get generate new refresh token")
+		return TokenPair{}, err
+	}
+
+	return tokenPair, nil
+}
+
+func (s AuthServiceImplementation) GenerateAccessTokenFromRefreshToken(ctx context.Context, refreshTokenString string) (TokenPair, error) {
+	s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "Generating access token from refresh token")
+
+	token, err := jwt.ParseWithClaims(refreshTokenString, &refreshTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrUnexpectedSigningMethod
+		}
+		return []byte(s.JwtSecret), nil
+	})
+	if err != nil {
+		s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "Could not decode token")
+		return TokenPair{}, err
+	}
+	if _, ok := token.Claims.(*refreshTokenClaims); !ok || !token.Valid {
+		s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "invalid token")
+		return TokenPair{}, ErrInvalidToken
+	}
+
+	claims := token.Claims.(*refreshTokenClaims)
+	jti := claims.Jti
+	oldRefreshToken, err := s.TokenRepository.GetRefreshTokenByJti(jti)
+	if err != nil {
+		s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "could not get token by JTI")
+		return TokenPair{}, err
+	}
+
+	user, err := s.UserRepository.GetUserByRefreshTokenId(oldRefreshToken.ID.String())
+	if err != nil {
+		s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "could not retrieve user from refresh token")
+		return TokenPair{}, err
+	}
+
+	tokenPair, err := s.generateNewRefreshTokenAndRemoveExistingRefreshToken(user, oldRefreshToken)
+	if err != nil {
+		s.Logger.Log("service.GenerateAccessTokenFromRefreshToken", "could not generate new refresh token")
+	}
+	return tokenPair, nil
+}
+
+func (s AuthServiceImplementation) generateNewRefreshTokenAndRemoveExistingRefreshToken(user *models.User, oldRefreshToken *models.RefreshToken) (TokenPair, error) {
 	generatedRefreshToken, expiresAt, jti := s.Helpers.GenerateRefreshToken()
 	refreshToken, err := s.TokenRepository.InsertRefreshToken(jti, expiresAt)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "Could not insert refresh token")
+		s.Logger.Log("service.generateNewRefreshToken", "Could not insert refresh token")
 		return TokenPair{}, ErrCouldNotCreateRefreshToken
 	}
 	err = s.UserRepository.UpdateUserRefreshToken(user, refreshToken)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "Could not update user's refresh token", "userId", user.ID, "refreshTokenId", refreshToken.ID)
+		s.Logger.Log("service.generateNewRefreshToken", "Could not update user's refresh token", "userId", user.ID, "refreshTokenId", refreshToken.ID)
 		return TokenPair{}, ErrCouldNotCreateRefreshToken
 	}
 
 	err = s.TokenRepository.DeleteRefreshToken(oldRefreshToken)
 	if err != nil {
-		s.Logger.Log("service.CreateUser", "could not delete old refresh token", "userId", user.ID)
+		s.Logger.Log("service.generateNewRefreshToken", "could not delete old refresh token", "userId", user.ID)
 		return TokenPair{}, err
 	}
 	generatedAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iss":       "pharmacist",
-		"exp":       time.Now().Add(time.Hour * time.Duration(24)),
-		"userId":    user.ID,
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
+		"iss":    "pharmacist",
+		"exp":    time.Now().Add(time.Hour * time.Duration(1)),
+		"userId": user.ID,
 	})
 
 	accessTokenString, err := generatedAccessToken.SignedString([]byte(s.JwtSecret))

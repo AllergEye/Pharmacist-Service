@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Auth_GetUserById_FullMethodName      = "/pb.Auth/GetUserById"
-	Auth_CreateUser_FullMethodName       = "/pb.Auth/CreateUser"
-	Auth_AuthenticateUser_FullMethodName = "/pb.Auth/AuthenticateUser"
+	Auth_GetUserById_FullMethodName                         = "/pb.Auth/GetUserById"
+	Auth_CreateUser_FullMethodName                          = "/pb.Auth/CreateUser"
+	Auth_AuthenticateUser_FullMethodName                    = "/pb.Auth/AuthenticateUser"
+	Auth_GenerateAccessTokenFromRefreshToken_FullMethodName = "/pb.Auth/GenerateAccessTokenFromRefreshToken"
 )
 
 // AuthClient is the client API for Auth service.
@@ -31,6 +32,7 @@ type AuthClient interface {
 	GetUserById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
 	AuthenticateUser(ctx context.Context, in *AuthenticateUserRequest, opts ...grpc.CallOption) (*AuthenticateUserResponse, error)
+	GenerateAccessTokenFromRefreshToken(ctx context.Context, in *GenerateAccessTokenFromRefreshTokenRequest, opts ...grpc.CallOption) (*GenerateAccessTokenFromRefreshTokenResponse, error)
 }
 
 type authClient struct {
@@ -68,6 +70,15 @@ func (c *authClient) AuthenticateUser(ctx context.Context, in *AuthenticateUserR
 	return out, nil
 }
 
+func (c *authClient) GenerateAccessTokenFromRefreshToken(ctx context.Context, in *GenerateAccessTokenFromRefreshTokenRequest, opts ...grpc.CallOption) (*GenerateAccessTokenFromRefreshTokenResponse, error) {
+	out := new(GenerateAccessTokenFromRefreshTokenResponse)
+	err := c.cc.Invoke(ctx, Auth_GenerateAccessTokenFromRefreshToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations should embed UnimplementedAuthServer
 // for forward compatibility
@@ -75,6 +86,7 @@ type AuthServer interface {
 	GetUserById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
 	AuthenticateUser(context.Context, *AuthenticateUserRequest) (*AuthenticateUserResponse, error)
+	GenerateAccessTokenFromRefreshToken(context.Context, *GenerateAccessTokenFromRefreshTokenRequest) (*GenerateAccessTokenFromRefreshTokenResponse, error)
 }
 
 // UnimplementedAuthServer should be embedded to have forward compatible implementations.
@@ -89,6 +101,9 @@ func (UnimplementedAuthServer) CreateUser(context.Context, *CreateUserRequest) (
 }
 func (UnimplementedAuthServer) AuthenticateUser(context.Context, *AuthenticateUserRequest) (*AuthenticateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AuthenticateUser not implemented")
+}
+func (UnimplementedAuthServer) GenerateAccessTokenFromRefreshToken(context.Context, *GenerateAccessTokenFromRefreshTokenRequest) (*GenerateAccessTokenFromRefreshTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateAccessTokenFromRefreshToken not implemented")
 }
 
 // UnsafeAuthServer may be embedded to opt out of forward compatibility for this service.
@@ -156,6 +171,24 @@ func _Auth_AuthenticateUser_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_GenerateAccessTokenFromRefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateAccessTokenFromRefreshTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).GenerateAccessTokenFromRefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_GenerateAccessTokenFromRefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).GenerateAccessTokenFromRefreshToken(ctx, req.(*GenerateAccessTokenFromRefreshTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -174,6 +207,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AuthenticateUser",
 			Handler:    _Auth_AuthenticateUser_Handler,
+		},
+		{
+			MethodName: "GenerateAccessTokenFromRefreshToken",
+			Handler:    _Auth_GenerateAccessTokenFromRefreshToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
