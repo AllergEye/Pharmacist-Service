@@ -6,10 +6,10 @@ generate-mocks:
 	mockgen -source=./pkg/auth/database/userRepository.go -destination=./mocks/database/userRepository.go -mock_names=UserRepository=MockUserRepository
 	mockgen -source=./pkg/auth/database/tokenRepository.go -destination=./mocks/database/tokenRepository.go -mock_names=TokenRepository=MockTokenRepository
 	mockgen -source=./pkg/auth/service.go -destination=./mocks/service.go -mock_names=AuthService=MockAuthService
-	mockgen -source=./pkg/auth/lib/helpers.go -destination=./mocks/helpers.go -mock_names=Helpers=MockHelpers
+	mockgen -source=./pkg/auth/lib/helpers.go -destination=./mocks/lib/helpers.go -mock_names=Helpers=MockHelpers
 
 run: ./main.go
 	go run main.go
 
 test:
-	go test ./...
+	go test ./... -cover

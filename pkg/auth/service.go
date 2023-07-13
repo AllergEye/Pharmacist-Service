@@ -121,7 +121,7 @@ func (s AuthServiceImplementation) AuthenticateUser(ctx context.Context, email s
 	oldRefreshToken, err := s.TokenRepository.GetRefreshTokenById(user.RefreshTokenID)
 	if err != nil {
 		s.Logger.Log("service.CreateUser", "Could not get refresh token by id", "refreshTokenId", user.RefreshTokenID)
-		return TokenPair{}, nil
+		return TokenPair{}, err
 	}
 
 	generatedRefreshToken, expiresAt, jti := s.Helpers.GenerateRefreshToken()
