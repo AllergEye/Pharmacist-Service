@@ -7,9 +7,10 @@ import (
 )
 
 type Endpoints struct {
-	GetUserById      endpoint.Endpoint
-	CreateUser       endpoint.Endpoint
-	AuthenticateUser endpoint.Endpoint
+	GetUserById                         endpoint.Endpoint
+	CreateUser                          endpoint.Endpoint
+	AuthenticateUser                    endpoint.Endpoint
+	GenerateAccessTokenFromRefreshToken endpoint.Endpoint
 }
 
 func MakeEndpoints(svc AuthService) Endpoints {
@@ -28,10 +29,16 @@ func MakeEndpoints(svc AuthService) Endpoints {
 		authenticateUserEndpoint = makeAuthenticateUserEndpoint(svc)
 	}
 
+	var generateAccessTokenFromRefreshTokenEndpoint endpoint.Endpoint
+	{
+		generateAccessTokenFromRefreshTokenEndpoint = makeGenerateAccessTokenFromRefreshTokenEndpoint(svc)
+	}
+
 	return Endpoints{
-		GetUserById:      getUserByIdEndpoint,
-		CreateUser:       createUserEndpoint,
-		AuthenticateUser: authenticateUserEndpoint,
+		GetUserById:                         getUserByIdEndpoint,
+		CreateUser:                          createUserEndpoint,
+		AuthenticateUser:                    authenticateUserEndpoint,
+		GenerateAccessTokenFromRefreshToken: generateAccessTokenFromRefreshTokenEndpoint,
 	}
 }
 
@@ -49,22 +56,33 @@ func makeGetUserByIdEndpoint(s AuthService) endpoint.Endpoint {
 func makeCreateUserEndpoint(s AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(CreateUserRequest)
-		accessToken, err := s.CreateUser(ctx, req.Email, req.FirstName, req.LastName, req.Password)
+		tokenPair, err := s.CreateUser(ctx, req.Email, req.FirstName, req.LastName, req.Password)
 		if err != nil {
 			return CreateUserResponse{}, err
 		}
-		return CreateUserResponse{AccessToken: accessToken, Err: nil}, nil
+		return CreateUserResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken, Err: nil}, nil
 	}
 }
 
 func makeAuthenticateUserEndpoint(s AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(AuthenticateUserRequest)
-		accessToken, err := s.AuthenticateUser(ctx, req.Email, req.Password)
+		tokenPair, err := s.AuthenticateUser(ctx, req.Email, req.Password)
 		if err != nil {
 			return AuthenticateUserResponse{}, err
 		}
-		return AuthenticateUserResponse{AccessToken: accessToken, Err: nil}, nil
+		return AuthenticateUserResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken, Err: nil}, nil
+	}
+}
+
+func makeGenerateAccessTokenFromRefreshTokenEndpoint(s AuthService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(GenerateAccessTokenFromRefreshTokenRequest)
+		tokenPair, err := s.GenerateAccessTokenFromRefreshToken(ctx, req.RefreshToken)
+		if err != nil {
+			return GenerateAccessTokenFromRefreshTokenResponse{}, err
+		}
+		return GenerateAccessTokenFromRefreshTokenResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken, Err: nil}, nil
 	}
 }
 
@@ -85,8 +103,9 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	AccessToken string `json:"accessToken"`
-	Err         error  `json:"error"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	Err          error  `json:"error"`
 }
 
 type AuthenticateUserRequest struct {
@@ -95,6 +114,17 @@ type AuthenticateUserRequest struct {
 }
 
 type AuthenticateUserResponse struct {
-	AccessToken string `json:"accessToken"`
-	Err         error  `json:"error"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	Err          error  `json:"error"`
+}
+
+type GenerateAccessTokenFromRefreshTokenRequest struct {
+	RefreshToken string
+}
+
+type GenerateAccessTokenFromRefreshTokenResponse struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	Err          error  `json:"error"`
 }
